@@ -227,9 +227,10 @@ struct ExportDocument: FileDocument {
             if recovery { try await store.recover(secret: password); return true }
             try await store.unlock(password: password)
             if enableBiometric, generation == lockGeneration[id, default: 0], selectedID == id {
-                let context = beginBiometricUnlock(id)
-                defer { finishBiometricUnlock(context) }
                 do {
+                    try BiometricUnlock.checkStorageAuthorization()
+                    let context = beginBiometricUnlock(id)
+                    defer { finishBiometricUnlock(context) }
                     try await BiometricUnlock.authenticate(context: context, reason: "为当前空间启用生物识别解锁")
                     guard generation == lockGeneration[id, default: 0], selectedID == id else { return true }
                     var key = try await store.deviceUnlockKey()

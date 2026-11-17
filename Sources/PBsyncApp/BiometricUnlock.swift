@@ -4,6 +4,24 @@ import PBsyncCore
 import Security
 
 enum BiometricUnlock {
+    static func checkStorageAuthorization() throws {
+        #if os(macOS)
+        var code: SecCode?
+        var staticCode: SecStaticCode?
+        var information: CFDictionary?
+        guard SecCodeCopySelf([], &code) == errSecSuccess, let code,
+              SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode,
+              SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation),
+                                           &information) == errSecSuccess,
+              let details = information as? [String: Any],
+              let rights = details[kSecCodeInfoEntitlementsDict as String] as? [String: Any],
+              let identifier = rights["com.apple.application-identifier"] as? String,
+              !identifier.isEmpty else {
+            throw PBError.invalid("当前 Mac 构建缺少受保护钥匙串的签名授权。请使用具备项目开发描述文件的签名版本启用 Touch ID。")
+        }
+        #endif
+    }
+
     static var name: String? {
         let context = LAContext()
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else { return nil }

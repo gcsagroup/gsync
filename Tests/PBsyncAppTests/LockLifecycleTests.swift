@@ -37,6 +37,17 @@ import PBsyncCore
         model.finishCredentialApproval(approval.id, accepted: true)
         XCTAssertEqual(answers, [false], "被锁定取消的旧窗口不能重复完成请求")
     }
+    func testBiometricEnrollmentRequiresSigningBeforePrompting() async throws {
+        let (model, root) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        await model.create(name: "签名权限验收", kind: .vault, password: password)
+        await model.lockSelected()
+        await model.unlock(password: password, enableBiometric: true)
+        XCTAssertFalse(model.busy)
+        XCTAssertNil(model.biometricSpaceID, "缺少签名授权的测试宿主不应发起指纹验证")
+        XCTAssertTrue(model.error?.contains("缺少受保护钥匙串的签名授权") == true)
+        XCTAssertNotNil(model.current, "正确的主密码仍应能打开本机副本")
+    }
     func testLockOtherSpacePreservesSelectedVaultAndApproval() async throws {
         let (model, root) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         await model.create(name: "收藏夹", kind: .bookmarks, password: password)
