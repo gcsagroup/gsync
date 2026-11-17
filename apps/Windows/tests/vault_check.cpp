@@ -1,4 +1,5 @@
 #include "vault.hpp"
+#include "windows_hello.hpp"
 #include <windows.h>
 #include <algorithm>
 #include <iostream>
@@ -54,6 +55,15 @@ void verifyVault(const Path& fixture, const Path& profile, std::wstring_view end
 
     auto remote = webdav(std::wstring(endpoint) + L"vault/", L"qa", L"SYNTHETIC-webdav-secret");
     vault = Vault::open(file, password, false, false);
+    {
+        SessionUnlockKey protectedKey(vault->deviceUnlockKey());
+        std::atomic_bool cancelled{true};
+        check(!verifyWindowsHello(nullptr, L"已取消的隔离测试", &cancelled), "cancelled Hello must reject before prompting");
+        rejected = false;
+        try { auto invalid = protectedKey.openAfterVerification(nullptr, file, false, &cancelled); }
+        catch (const Fault&) { rejected = true; }
+        check(rejected && readFile(file) == fingerprint, "cancelled Hello must not unlock or modify ciphertext");
+    }
     check(vault->sync(*remote).uploaded == 0, "identical encrypted revisions must not upload");
     Entry item;
     item.kind = "login";

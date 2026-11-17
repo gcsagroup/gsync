@@ -31,7 +31,7 @@ struct Apartment {
 };
 
 template<class Result>
-std::optional<Result> awaitResult(IAsyncOperation<Result>* raw, DWORD timeout) {
+std::optional<Result> awaitResult(IAsyncOperation<Result>* raw, DWORD timeout, const std::atomic_bool* cancelled) {
     Com<IAsyncOperation<Result>> operation(raw);
     if (!operation) return {};
     IAsyncInfo* rawInfo{};
@@ -40,7 +40,7 @@ std::optional<Result> awaitResult(IAsyncOperation<Result>* raw, DWORD timeout) {
     const auto started = GetTickCount64();
     AsyncStatus status{};
     while (SUCCEEDED(info->get_Status(&status)) && status == Started) {
-        if (GetTickCount64() - started >= timeout) {
+        if ((cancelled && cancelled->load()) || GetTickCount64() - started >= timeout) {
             info->Cancel();
             return {};
         }
@@ -52,7 +52,8 @@ std::optional<Result> awaitResult(IAsyncOperation<Result>* raw, DWORD timeout) {
 }
 }
 
-bool verifyWindowsHello(HWND window, const wchar_t* reason) {
+bool verifyWindowsHello(HWND window, const wchar_t* reason, const std::atomic_bool* cancelled) {
+    if (cancelled && cancelled->load()) return false;
     Apartment apartment;
     if (FAILED(apartment.status)) return false;
     constexpr wchar_t verifier[] = L"Windows.Security.Credentials.UI.UserConsentVerifier";
@@ -68,7 +69,7 @@ bool verifyWindowsHello(HWND window, const wchar_t* reason) {
     Com<IUserConsentVerifierStatics> statics(rawStatics);
     IAsyncOperation<UserConsentVerifierAvailability>* availability{};
     if (FAILED(statics->CheckAvailabilityAsync(&availability)) ||
-        awaitResult(availability, 5000) != UserConsentVerifierAvailability_Available) return false;
+        awaitResult(availability, 5000, cancelled) != UserConsentVerifierAvailability_Available) return false;
     ConsentForWindow* rawConsent{};
     if (FAILED(statics->QueryInterface(consentForWindowID, reinterpret_cast<void**>(&rawConsent)))) return false;
     Com<ConsentForWindow> consent(rawConsent);
@@ -76,7 +77,8 @@ bool verifyWindowsHello(HWND window, const wchar_t* reason) {
     Operation* result{};
     if (FAILED(consent->RequestVerificationForWindowAsync(window, message, __uuidof(Operation),
                                                            reinterpret_cast<void**>(&result)))) return false;
-    return awaitResult(result, 90000) == UserConsentVerificationResult_Verified;
+    return awaitResult(result, 90000, cancelled) == UserConsentVerificationResult_Verified &&
+        !(cancelled && cancelled->load());
 }
 
 SessionUnlockKey::SessionUnlockKey(Bytes key) : protectedKey(std::move(key)) {
@@ -90,8 +92,9 @@ SessionUnlockKey::SessionUnlockKey(Bytes key) : protectedKey(std::move(key)) {
 
 SessionUnlockKey::~SessionUnlockKey() { SecureZeroMemory(protectedKey.data(), protectedKey.size()); }
 
-std::shared_ptr<Vault> SessionUnlockKey::openAfterVerification(HWND window, const Path& file, bool bookmarks) const {
-    if (!verifyWindowsHello(window, L"解锁 PBsync 当前空间")) {
+std::shared_ptr<Vault> SessionUnlockKey::openAfterVerification(HWND window, const Path& file, bool bookmarks,
+                                                            const std::atomic_bool* cancelled) const {
+    if (!verifyWindowsHello(window, L"解锁 PBsync 当前空间", cancelled)) {
         throw Fault("Windows Hello 未完成，可使用主密码或恢复密钥。");
     }
     auto clear = protectedKey;

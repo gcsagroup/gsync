@@ -34,14 +34,13 @@ enum BiometricUnlock {
         return status == errSecSuccess || status == errSecInteractionNotAllowed
     }
 
-    static func authorizeEnrollment() async throws -> LAContext {
-        let context = LAContext()
+    static func authenticate(context: LAContext, reason: String) async throws {
         context.localizedFallbackTitle = ""
+        context.touchIDAuthenticationAllowableReuseDuration = 0
         guard try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
-                                               localizedReason: "为当前空间启用生物识别解锁") else {
+                                               localizedReason: reason) else {
             throw PBError.unavailable
         }
-        return context
     }
 
     static func save(_ key: Data, file: URL, context: LAContext) throws {

@@ -53,6 +53,9 @@ public final class MainActivity extends Activity {
     private LibraryUi ui;
     private BiometricUnlock biometric;
     private CancellationSignal biometricPrompt;
+    private AlertDialog protectedDialog;
+    private long sessionEpoch;
+    private boolean active;
     private TextView status, count, empty;
     private EditText search;
     private EntryRows rowAdapter;
@@ -83,12 +86,16 @@ public final class MainActivity extends Activity {
 
     @Override protected void onStart() {
         super.onStart();
+        active = true;
         handler.post(periodic);
     }
 
     @Override protected void onStop() {
+        active = false;
         handler.removeCallbacks(periodic);
-        cancelBiometric();
+        lock();
+        if (protectedDialog != null) protectedDialog.dismiss();
+        show();
         super.onStop();
     }
 
@@ -122,8 +129,10 @@ public final class MainActivity extends Activity {
     }
 
     private void lock() {
+        sessionEpoch++;
         cancelBiometric();
-        if (session != null) session.close();
+        SpaceSession closing = session;
+        if (closing != null) worker.execute(closing::close);
         session = null;
         dav = null;
         folder = null;
@@ -867,20 +876,21 @@ public final class MainActivity extends Activity {
     private <T> void work(Task<T> action, java.util.function.Consumer<T> done, boolean showProgress) {
         if (busy) return;
         busy = true;
+        long epoch = sessionEpoch;
         if (showProgress) setStatus("正在处理…");
         worker.execute(() -> {
             try {
                 T result = action.run();
                 runOnUiThread(() -> {
                     busy = false;
-                    if (!isDestroyed()) done.accept(result);
+                    if (!isDestroyed() && active && epoch == sessionEpoch) done.accept(result);
                     else if (result instanceof SpaceSession opened) opened.close();
                     else if (result instanceof Connection connection) connection.session().close();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     busy = false;
-                    if (!isDestroyed()) setStatus(message(error));
+                    if (!isDestroyed() && active && epoch == sessionEpoch) setStatus(message(error));
                 });
             }
         });
@@ -888,7 +898,11 @@ public final class MainActivity extends Activity {
 
     private void protect(AlertDialog dialog) {
         editing = true;
-        dialog.setOnDismissListener(d -> editing = false);
+        protectedDialog = dialog;
+        dialog.setOnDismissListener(d -> {
+            editing = false;
+            if (protectedDialog == dialog) protectedDialog = null;
+        });
         dialog.show();
         dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }

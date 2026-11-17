@@ -424,6 +424,9 @@ struct UnlockView: View {
                 Toggle("在此设备启用\(biometricName)解锁", isOn: $enableBiometric).font(.callout)
             }
             Button("解锁") { unlock() }.buttonStyle(.borderedProminent).disabled(secret.isEmpty || model.busy)
+            if model.biometricSpaceID != nil {
+                Button("取消生物识别验证") { model.cancelBiometricUnlock() }
+            }
         }
         .frame(maxWidth: 360).padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: model.selectedID) {

@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
+#include <wtsapi32.h>
 #include <algorithm>
 #include <array>
 #include <functional>
@@ -282,6 +283,7 @@ public:
             controls.emplace(id, list);
         }
         SetTimer(window, 1, 20000, nullptr);
+        WTSRegisterSessionNotification(window, NOTIFY_FOR_THIS_SESSION);
         refresh();
     }
 
@@ -639,6 +641,7 @@ public:
         if ((id == foldersBox || id == itemsBox) && notification != LBN_SELCHANGE && notification != LBN_DBLCLK) return;
         if (id == lockButton && busy && page != Page::sync && spaces[dataIndex()].vault && !locking) {
             locking = true;
+            helloCancelled = true;
             spaces[dataIndex()].selected.clear();
             clearDetail();
             layout();
@@ -768,7 +771,7 @@ public:
         if (worker.joinable()) worker.join();
         busy = false;
         auto& space = spaces[pendingIndex];
-        if (!locking || pendingIndex != dataIndex()) {
+        if (pendingGeneration == lockGeneration && (!locking || pendingIndex != dataIndex())) {
             if (result.vault) space.vault = std::move(result.vault);
             if (result.remote) space.remote = std::move(result.remote);
             if (result.sessionKey) sessionKeys[pendingIndex] = std::move(result.sessionKey);
@@ -781,11 +784,23 @@ public:
     }
 
     void requestClose() {
+        helloCancelled = true;
         if (!busy) DestroyWindow(window);
         else {
             closing = true;
             ShowWindow(window, SW_HIDE);
         }
+    }
+
+    void lockAll() {
+        ++lockGeneration;
+        helloCancelled = true;
+        if (activeForm && activeForm->window) send(activeForm->window, WM_COMMAND, IDCANCEL);
+        spaces = {};
+        locking = false;
+        browserNotice.clear();
+        clearDetail();
+        refresh();
     }
 
     void error(std::wstring message) {
@@ -821,8 +836,11 @@ private:
     std::vector<Entry> rows;
     std::optional<Entry> selected;
     bool busy{}, modal{}, reveal{}, automatic{true}, closing{}, locking{};
+    std::atomic_bool helloCancelled{false};
+    unsigned long long lockGeneration{}, pendingGeneration{};
     int pendingIndex{}, nextSync{};
     std::thread worker;
+    Form* activeForm{};
     Result result;
     std::wstring previousStatus;
 
@@ -947,13 +965,16 @@ private:
 
     bool form(std::wstring title, std::wstring button, std::vector<Field>& fields, bool* recovery = nullptr) {
         modal = true;
+        auto generation = lockGeneration;
         Form form{window, nullptr, fonts, theme, std::move(title), std::move(button), fields, recovery != nullptr};
+        activeForm = &form;
         try {
             auto accepted = form.show();
+            activeForm = nullptr;
             if (recovery) *recovery = form.recovery;
             modal = false;
-            return accepted;
-        } catch (...) { modal = false; throw; }
+            return accepted && generation == lockGeneration;
+        } catch (...) { activeForm = nullptr; modal = false; throw; }
     }
 
     void chooseFile(int index) {
@@ -989,8 +1010,8 @@ private:
         if (!spaces[index].vault) {
             auto quick = sessionKeys[index];
             if (!quick) return;
-            begin(index, [quick, owner = window, file, index] {
-                auto vault = quick->openAfterVerification(owner, file, index == 0);
+            begin(index, [this, quick, owner = window, file, index] {
+                auto vault = quick->openAfterVerification(owner, file, index == 0, &helloCancelled);
                 return Result{vault, {}, L"已用 Windows Hello 解锁"};
             });
             return;
@@ -1004,9 +1025,9 @@ private:
         std::vector<Field> fields{{L"主密码 · 仅在本次运行期间启用", {}, true}};
         if (!form(L"启用 Windows Hello", L"验证并启用", fields)) return;
         auto secret = std::make_shared<Secret>(fields[0].value);
-        begin(index, [owner = window, file, index, secret] {
+        begin(index, [this, owner = window, file, index, secret] {
             auto vault = Vault::open(file, secret->value, false, index == 0);
-            if (!verifyWindowsHello(owner, L"为本次 PBsync 运行启用 Windows Hello 解锁")) {
+            if (!verifyWindowsHello(owner, L"为本次 PBsync 运行启用 Windows Hello 解锁", &helloCancelled)) {
                 throw Fault("Windows Hello 不可用或验证已取消。请检查 Windows 11 的登录选项。");
             }
             auto key = std::make_shared<SessionUnlockKey>(vault->deviceUnlockKey());
@@ -1051,6 +1072,8 @@ private:
 
     void begin(int index, std::function<Result()> action) {
         busy = true;
+        helloCancelled = false;
+        pendingGeneration = lockGeneration;
         pendingIndex = index;
         previousStatus = spaces[index].status;
         spaces[index].status = L"正在处理…";
@@ -1186,13 +1209,23 @@ LRESULT CALLBACK mainProc(HWND window, UINT message, WPARAM w, LPARAM l) {
             SetBkColor(reinterpret_cast<HDC>(w), white);
             return reinterpret_cast<LRESULT>(app->theme.input);
         case WM_TIMER: app->tick(); return 0;
+        case WM_WTSSESSION_CHANGE:
+            if (w == WTS_SESSION_LOCK || w == WTS_SESSION_LOGOFF ||
+                w == WTS_CONSOLE_DISCONNECT || w == WTS_REMOTE_DISCONNECT) app->lockAll();
+            return 0;
+        case WM_POWERBROADCAST:
+            if (w == PBT_APMSUSPEND) app->lockAll();
+            return TRUE;
         case finished: app->complete(); return 0;
         case browserMessage: app->receiveBrowser(); return 0;
 #ifdef PBSYNC_UI_CAPTURE
         case WM_APP + 17: return app->capture();
 #endif
         case WM_CLOSE: app->requestClose(); return 0;
-        case WM_DESTROY: PostQuitMessage(0); return 0;
+        case WM_DESTROY:
+            WTSUnRegisterSessionNotification(window);
+            PostQuitMessage(0);
+            return 0;
         }
     } catch (const Fault& error) {
         if (message == WM_CREATE) {

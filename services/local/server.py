@@ -24,6 +24,7 @@ class AccountError(Exception):
 
 class StorageServer(ThreadingHTTPServer):
     daemon_threads = True
+    request_queue_size = 32
     def __init__(self, address, root, dav_user, dav_password, cloud_token):
         super().__init__(address, Handler)
         self.root = Path(root).resolve()

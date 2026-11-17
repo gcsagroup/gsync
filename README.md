@@ -2,9 +2,9 @@
 
 个人收藏夹与保险库的跨平台开发项目，包含 macOS、iOS、Android 和 Windows 客户端，以及数据核心、浏览器扩展和本地验证服务。产品范围与原始验收标准见 [文档导航](docs/README.md)。
 
-**当前开发版本为 Ver 5.1。** 已验证的构建为 Android (136)、iOS 模拟器 (137)、Windows (138) 和 Mac (139)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
+**当前开发版本为 Ver 5.1。** 本轮验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (150)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
 
-收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的重启后解锁检查。Mac Touch ID 已核对启用入口，实际指纹解锁待验。Windows 11 已核对无交互远程会话中的主密码回退，Hello 成功解锁待交互桌面验收。真机、各来源持续同步和正式分发分别按专项记录验收。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
+收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已核对取消验证和主密码回退，实际指纹成功解锁待验。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。完整结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
 
 ## 本机运行
 
@@ -32,6 +32,7 @@ iPhone 模拟器包位于 `build/apple/Build/Products/Debug-iphonesimulator/PBsy
 - Android、iOS 和 Mac 可以在本机副本的主密码解锁界面开启生物识别。Android 使用系统支持的强生物识别，iOS 使用 Face ID 或 Touch ID，Mac 使用 Touch ID。收藏夹和密码库各自开启。
 - Windows 11 在解锁本机副本后提供 Windows Hello 入口。系统可以使用已配置的指纹、人脸或 Hello PIN。快速解锁只在本次程序运行中有效。
 - 初次连接、新设备和恢复加密备份仍需要主密码或恢复密钥。
+- Android 切到后台时锁定当前空间并关闭敏感编辑窗口。Apple 两端每次解锁独立发起系统验证，支持取消。Windows 在收到系统锁定、会话断开或睡眠通知时锁定空间。锁定前尚未完成的解锁结果会失效。
 
 ## 统一测试
 

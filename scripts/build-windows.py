@@ -88,7 +88,7 @@ END
              '-O2', '-Wall', '-Wextra', '-Werror', '-finput-charset=UTF-8',
              '-I' + str(header.parent), '-I' + str(SOURCE / 'src')]
     libraries = ['-static', '-static-libgcc', '-static-libstdc++', '-s', '-lbcrypt', '-lcrypt32',
-                 '-lole32', '-lruntimeobject', '-lwinhttp', '-lshlwapi', '-lxmllite', '-lcomctl32', '-lcomdlg32', '-lgdi32', '-lshell32']
+                 '-lole32', '-lruntimeobject', '-lwinhttp', '-lshlwapi', '-lxmllite', '-lcomctl32', '-lcomdlg32', '-lgdi32', '-lshell32', '-lwtsapi32']
     objects = []
     for name in ('vault', 'dav', 'browser_bridge', 'windows_hello', 'main'):
         output = TARGET / (name + '.o')
@@ -102,7 +102,7 @@ END
     listing = subprocess.check_output([prefix + 'objdump', '-p', str(staged)], text=True)
     allowed = {'advapi32.dll', 'bcrypt.dll', 'combase.dll', 'comctl32.dll', 'comdlg32.dll', 'crypt32.dll',
                'gdi32.dll', 'kernel32.dll', 'msvcrt.dll', 'ole32.dll', 'shell32.dll',
-               'shlwapi.dll', 'user32.dll', 'winhttp.dll', 'xmllite.dll'}
+               'shlwapi.dll', 'user32.dll', 'winhttp.dll', 'wtsapi32.dll', 'xmllite.dll'}
     imports = {name.lower() for name in re.findall(r'DLL Name:\s+(\S+)', listing)}
     # Windows 10/11 自带 Universal CRT 的 API 集。工具链的 C++ 库和线程库始终静态链接。
     external = {name for name in imports - allowed
@@ -111,6 +111,7 @@ END
         raise ValueError(f'发现非系统依赖: {sorted(external)}')
     if options.tests:
         run([prefix + 'g++', *flags, str(SOURCE / 'tests' / 'vault_check.cpp'), *objects[:2],
+             str(TARGET / 'windows_hello.o'),
              *libraries, '-o', str(TARGET / 'VaultCheck.exe')], logs / f'tests-{number}.log')
         capture = TARGET / 'capture-main.o'
         run([prefix + 'g++', *flags, '-DPBSYNC_UI_CAPTURE', '-c', str(SOURCE / 'src' / 'main.cpp'),

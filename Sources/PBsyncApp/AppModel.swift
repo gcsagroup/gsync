@@ -69,6 +69,8 @@ struct ExportDocument: FileDocument {
     @Published private(set) var sensitivePresentationID = UUID()
     private var lockGeneration: [UUID: Int] = [:]
     private var lockingSpaces: Set<UUID> = []
+    @Published private(set) var biometricSpaceID: UUID?
+    private var biometricContext: LAContext?
     private var deviceID = UUID()
     private var clipboardToken = UUID()
     private var copiedChange: Int?
@@ -149,6 +151,7 @@ struct ExportDocument: FileDocument {
         guard let id = selectedID, let store = stores[id] else { throw PBError.invalid("请先创建或连接数据空间。") }; return store
     }
     func selectSection(_ section: String) {
+        cancelBiometricUnlock()
         self.section = section; search = ""; showDeleted = false; selectedFolder = nil
         if section == "收藏夹" || section == "保险库" {
             let kind: SpaceKind = section == "收藏夹" ? .bookmarks : .vault
@@ -156,6 +159,7 @@ struct ExportDocument: FileDocument {
         }
     }
     func selectSpace(_ id: UUID) {
+        cancelBiometricUnlock()
         selectedID = id; selectedFolder = nil; showDeleted = false; search = ""
         if let entry = selected { section = entry.kind == .bookmarks ? "收藏夹" : "保险库" }
     }
@@ -178,6 +182,24 @@ struct ExportDocument: FileDocument {
             status[entry.id] = "已关闭本机生物识别解锁"
         } catch { report(error) }
     }
+    func cancelBiometricUnlock() {
+        guard let context = biometricContext else { return }
+        if let id = biometricSpaceID { lockGeneration[id, default: 0] += 1 }
+        finishBiometricUnlock(context)
+    }
+    private func finishBiometricUnlock(_ context: LAContext) {
+        if biometricContext === context {
+            biometricContext = nil
+            biometricSpaceID = nil
+        }
+        context.invalidate()
+    }
+    private func beginBiometricUnlock(_ id: UUID) -> LAContext {
+        let context = LAContext()
+        biometricContext = context
+        biometricSpaceID = id
+        return context
+    }
     private func unlockSession(_ open: (VaultStore, UUID, Int, URL) async throws -> Bool) async {
         guard !busy, let entry = selected, let store = stores[entry.id], !lockingSpaces.contains(entry.id) else { return }
         let id = entry.id, file = root.appendingPathComponent(entry.filename)
@@ -194,15 +216,21 @@ struct ExportDocument: FileDocument {
             #if os(macOS)
             if automaticBookmarkFiles.contains(id) { pollBookmarkFiles() }
             #endif
-        } catch { report(error) }
+        } catch let error as LAError where [.userCancel, .systemCancel, .appCancel].contains(error.code) {
+            return
+        } catch {
+            if generation == lockGeneration[id, default: 0] { report(error) }
+        }
     }
     func unlock(password: String, recovery: Bool = false, enableBiometric: Bool = false) async {
         await unlockSession { store, id, generation, file in
             if recovery { try await store.recover(secret: password); return true }
             try await store.unlock(password: password)
             if enableBiometric, generation == lockGeneration[id, default: 0], selectedID == id {
+                let context = beginBiometricUnlock(id)
+                defer { finishBiometricUnlock(context) }
                 do {
-                    let context = try await BiometricUnlock.authorizeEnrollment()
+                    try await BiometricUnlock.authenticate(context: context, reason: "为当前空间启用生物识别解锁")
                     guard generation == lockGeneration[id, default: 0], selectedID == id else { return true }
                     var key = try await store.deviceUnlockKey()
                     defer { key.resetBytes(in: 0..<key.count) }
@@ -219,8 +247,11 @@ struct ExportDocument: FileDocument {
     }
     func unlockWithBiometrics() async {
         await unlockSession { store, id, generation, file in
+            let context = beginBiometricUnlock(id)
+            defer { finishBiometricUnlock(context) }
+            try await BiometricUnlock.authenticate(context: context, reason: "解锁 PBsync 当前空间")
             guard var key = try await Task.detached(operation: {
-                try BiometricUnlock.read(file, context: LAContext())
+                try BiometricUnlock.read(file, context: context)
             }).value else { return false }
             defer { key.resetBytes(in: 0..<key.count) }
             guard selectedID == id, generation == lockGeneration[id, default: 0] else { return false }
@@ -229,6 +260,7 @@ struct ExportDocument: FileDocument {
         }
     }
     private func invalidateSensitiveState(for ids: Set<UUID>, all: Bool) {
+        if all || biometricSpaceID.map(ids.contains) == true { cancelBiometricUnlock() }
         for id in ids {
             lockGeneration[id, default: 0] += 1
             states[id] = nil
