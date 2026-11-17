@@ -28,7 +28,7 @@ def include_file(file):
     include(str(file.relative_to(ROOT)),file.read_bytes())
 
 
-for name in ('VERSION','BUILD_NUMBER','Package.swift','Package.resolved','apps/Apple/project.yml'):
+for name in ('LICENSE','VERSION','BUILD_NUMBER','Package.swift','Package.resolved','apps/Apple/project.yml'):
     include_file(ROOT/name)
 patterns = {
     'Sources':['*/*.swift'], 'Tests':['*.py','*.mjs','*Tests/*.swift'],

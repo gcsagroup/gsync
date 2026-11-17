@@ -38,7 +38,7 @@
 | cryptography | 独立测试验证 P-256 签名 | Apache-2.0 OR BSD-3-Clause；仅测试环境使用 |
 | pykeepass 传递依赖 | XML、KDF、KDBX 容器 | 锁定版本记录在 requirements-lock.txt，完整许可证清单由安装元数据生成 |
 
-正式项目许可证未选择，不私自写入 MIT、Apache 或 GPL 的整体授权声明。可选工具采用独立进程不能自动证明分发组合免于任何许可证义务；公开源码／App 打包前单独审查。Mac 70 号起随包带 CPython、文件连接器及第三方声明，打包工具版本在 requirements-build.txt。iPhone 不包含此运行时。
+2026-11-18，项目负责人确认自有代码采用 [MIT 许可证](../LICENSE)。第三方依赖遵循各自的许可证，分发时按实际打包组合保留授权文本并履行相应义务。Mac 70 号起随包带 CPython、文件连接器及第三方声明，打包工具版本在 requirements-build.txt。iPhone 不包含此运行时。
 
 ## 签名与验收环境
 

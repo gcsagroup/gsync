@@ -77,4 +77,4 @@ KDBX 仅生成候选、独立重新加载并核对未知字段与附件，始终
 
 ## 许可证与发布
 
-项目源码托管于 [gcsagroup/gsync](https://github.com/gcsagroup/gsync)。正式项目许可证尚待项目负责人选择。桌面可选 `pykeepass` 使用 GPL-3.0，相关依赖及分发影响见 [依赖说明](docs/11-engineering-and-dependencies.md)。各端安装包与商店分发的状态以相应构建和验收记录为准。
+项目自有代码采用 [MIT 许可证](LICENSE)，源码托管于 [gcsagroup/gsync](https://github.com/gcsagroup/gsync)。第三方依赖遵循各自的许可证。桌面可选 `pykeepass` 使用 GPL-3.0，相关依赖及分发影响见 [依赖说明](docs/11-engineering-and-dependencies.md)。各端安装包与商店分发的状态以相应构建和验收记录为准。

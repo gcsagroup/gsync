@@ -1,6 +1,6 @@
 # PBsync 内部候选的构建与恢复
 
-自有代码的许可证由项目负责人暂缓决定。本包用于本地复核。归档内的 `distribution/dependencies.json` 将每个锁定依赖映射到它自己的授权文本。Mac 和 iPhone 的主程序及凭据扩展中均附 ZIPFoundation 的 MIT 文本。Mac 包内的 pbsync-connector 包含解释器及文件连接器依赖，授权文本在 Contents/Resources/ConnectorNotices。安装后的 1PUX、KDBX 不需要 Python、Homebrew 或源码。可选的 1Password 在线连接仍需用户自行安装并授权官方 op CLI。
+项目自有代码采用 MIT 许可证，完整授权文本位于仓库及源码归档根目录的 `LICENSE`。归档内的 `distribution/dependencies.json` 将每个锁定依赖映射到它自己的授权文本。Mac 和 iPhone 的主程序及凭据扩展中均附 ZIPFoundation 的 MIT 文本。Mac 包内的 pbsync-connector 包含解释器及文件连接器依赖，授权文本在 Contents/Resources/ConnectorNotices。安装后的 1PUX、KDBX 不需要 Python、Homebrew 或源码。可选的 1Password 在线连接仍需用户自行安装并授权官方 op CLI。
 
 在项目根目录执行下列命令。本轮环境为 Xcode 27.2、XcodeGen 2.46.0、Python 3.14、Node.js 及 iOS 26.5 模拟器。构建需要访问 Package.resolved 所列的 Swift 依赖或其已有缓存，以及锁文件对应的 Python 包。
 
