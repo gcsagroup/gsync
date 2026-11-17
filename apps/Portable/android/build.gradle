@@ -1,0 +1,19 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'org.gcsa.pbsync.android'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'org.gcsa.pbsync'
+        minSdk 28
+        targetSdk 34
+        versionCode file('../../../BUILD_NUMBER').text.trim().toInteger()
+        versionName file('../../../VERSION').text.trim()
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies { implementation project(':shared') }

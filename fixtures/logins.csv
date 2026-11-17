@@ -1,0 +1,25 @@
+name,url,username,password,note,未知字段
+合成账号 1,https://example.com,user0@example.invalid,ONLY-SYNTHETIC-0-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 2,https://example.com,user1@example.invalid,ONLY-SYNTHETIC-1-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 3,https://example.com,user2@example.invalid,ONLY-SYNTHETIC-2-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 4,https://example.com,user3@example.invalid,ONLY-SYNTHETIC-3-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 5,https://example.com,user4@example.invalid,ONLY-SYNTHETIC-4-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 6,https://example.com,user5@example.invalid,ONLY-SYNTHETIC-5-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 7,https://example.com,user6@example.invalid,ONLY-SYNTHETIC-6-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 8,https://example.com,user7@example.invalid,ONLY-SYNTHETIC-7-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 9,https://example.com,user8@example.invalid,ONLY-SYNTHETIC-8-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 10,https://example.com,user9@example.invalid,ONLY-SYNTHETIC-9-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 11,https://example.com,user10@example.invalid,ONLY-SYNTHETIC-10-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容
+合成账号 12,https://example.com,user11@example.invalid,ONLY-SYNTHETIC-11-NOT-A-REAL-SECRET,"中文备注，含逗号
+第二行",保留扩展内容

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "PBsync 收藏夹与保险库",
+  "version": "2.1.3",
+  "description": "与本机 PBsync 配对，合并收藏夹并向明确的网站提供所选凭据。",
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "nativeMessaging",
+    "activeTab",
+    "scripting",
+    "alarms",
+    "webNavigation"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.mjs",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PBsync"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

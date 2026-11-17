@@ -1,0 +1,158 @@
+name: PBsync
+options:
+  bundleIdPrefix: com.gcsa.pbsync
+  deploymentTarget:
+    macOS: '14.0'
+    iOS: '17.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    MARKETING_VERSION: '1.0'
+    CURRENT_PROJECT_VERSION: '1'
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+packages:
+  PBsync:
+    path: ../..
+targets:
+  PBsyncMac:
+    type: application
+    platform: macOS
+    sources:
+      - ../../Sources/PBsyncApp
+      - path: ../../distribution/licenses/ZIPFoundation-MIT.txt
+        buildPhase: resources
+      - path: ../../build/mac-connector/pbsync-connector
+        optional: true
+        buildPhase: resources
+      - path: ../../build/mac-connector/ConnectorNotices
+        type: folder
+        optional: true
+        buildPhase: resources
+    dependencies:
+      - package: PBsync
+        product: PBsyncCore
+      - target: PBsyncCredentialsMac
+    info:
+      path: Resources/Mac-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: GCSA-PBsync
+        LSApplicationCategoryType: public.app-category.productivity
+        NSPrincipalClass: NSApplication
+        PBsyncSharedContainer: true
+        NSUserActivityTypes: [ASCredentialExchangeActivityType]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gcsa.pbsync
+        PRODUCT_NAME: GCSA-PBsync
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: Resources/Mac.entitlements
+  PBsyncIOS:
+    type: application
+    platform: iOS
+    sources:
+      - ../../Sources/PBsyncApp
+      - path: ../../distribution/licenses/ZIPFoundation-MIT.txt
+        buildPhase: resources
+    dependencies:
+      - package: PBsync
+        product: PBsyncCore
+      - target: PBsyncCredentialsIOS
+    info:
+      path: Resources/iOS-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: PBsync
+        NSFaceIDUsageDescription: 使用面容 ID 解锁此设备上的 PBsync 数据空间。
+        PBsyncSharedContainer: true
+        NSUserActivityTypes: [ASCredentialExchangeActivityType]
+        UILaunchScreen: {}
+        UISupportsDocumentBrowser: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIApplicationSupportsIndirectInputEvents: true
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gcsa.pbsync.ios
+        PRODUCT_NAME: PBsync
+        TARGETED_DEVICE_FAMILY: '1,2'
+        CODE_SIGN_ENTITLEMENTS: Resources/iOS.entitlements
+  PBsyncCredentialsMac:
+    type: app-extension
+    platform: macOS
+    sources:
+      - CredentialProvider
+      - path: ../../distribution/licenses/ZIPFoundation-MIT.txt
+        buildPhase: resources
+    dependencies:
+      - package: PBsync
+        product: PBsyncCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gcsa.pbsync.credentials
+        CODE_SIGN_ENTITLEMENTS: Resources/ProviderMac.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Resources/ProviderMac-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: PBsync 凭据
+        PBsyncSharedContainer: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasswords: true
+              SupportsCredentialExchange: true
+              SupportedCredentialExchangeVersions: ["1.0"]
+              ProvidesPasskeys: true
+              ProvidesOneTimeCodes: true
+  PBsyncCredentialsIOS:
+    type: app-extension
+    platform: iOS
+    sources:
+      - CredentialProvider
+      - path: ../../distribution/licenses/ZIPFoundation-MIT.txt
+        buildPhase: resources
+    dependencies:
+      - package: PBsync
+        product: PBsyncCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gcsa.pbsync.ios.credentials
+        CODE_SIGN_ENTITLEMENTS: Resources/ProviderIOS.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Resources/ProviderIOS-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: PBsync 凭据
+        PBsyncSharedContainer: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasswords: true
+              SupportsCredentialExchange: true
+              SupportedCredentialExchangeVersions: ["1.0"]
+              ProvidesPasskeys: true
+              ProvidesOneTimeCodes: true
+schemes:
+  PBsyncMac:
+    build:
+      targets:
+        PBsyncMac: all
+  PBsyncIOS:
+    build:
+      targets:
+        PBsyncIOS: all

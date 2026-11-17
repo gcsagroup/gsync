@@ -1,0 +1,5 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"><title>PBsync</title></head><body>
+<div class="brand"><div class="mark">P</div><div><h1>PBsync</h1><div class="muted">收藏与密码，由你掌握</div></div></div>
+<section><h2>收藏夹</h2><p class="muted">先预览再合并。首次操作保留浏览器快照，不自动清空任何一端。</p><button id="preview">预览合并</button><button id="sync" class="primary" disabled>确认合并</button><p id="summary"></p></section>
+<section><h2>当前网站</h2><div id="origin" class="muted"></div><button id="list">查找可填充账号</button><div id="credentials"></div><button id="capture">读取当前表单，准备保存</button><button id="save">确认保存到保险库</button><p class="muted">默认主动填充，不提交登录。保存与首次填充需到 App 确认。</p></section>
+<p id="status" role="status"></p><button id="options">配对与设置</button><script type="module" src="popup.mjs"></script></body></html>

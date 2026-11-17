@@ -1,0 +1,7 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"><title>PBsync 扩展设置</title></head><body><main>
+<div class="brand"><div class="mark">P</div><div><h1>连接你的 PBsync</h1><div class="muted">每个浏览器配置文件独立配对</div></div></div>
+<section><h2>1. 配对本机 App</h2><p>在 App 的“同步与连接”中选择授权空间，生成配对密钥。先按项目安装说明注册本机通信组件，再将密钥粘贴到这里。</p><label>配对密钥<input id="token" type="password" autocomplete="off" spellcheck="false"></label><button id="pair" class="primary">保存配对</button><button id="revoke">移除配对</button><p class="muted">消息在扩展与 App 之间加密。网站不能直接调用原生通信通道。</p></section>
+<section><h2>2. 指定网站自动填入</h2><p class="muted">仅对明确允许的网站启用。存在多个账号、隐藏字段、跨域表单或锁定状态时不会猜测。App 端也需允许相同网站。</p><label>HTTPS 网站来源（每行一个，例如 https://example.com）<textarea id="origins" spellcheck="false"></textarea></label><button id="saveOrigins">授权并保存网站</button></section>
+<section><h2>自动保存账号</h2><p>默认逐次确认。在 App 为保险库指定登录成功页，再读取并授权。账号或版本有冲突时需重新核对。</p><pre id="rules"></pre><button id="readSave">读取保险库规则</button><button id="enableSave" disabled>授权并启用</button><button id="disableSave">恢复逐次确认</button></section>
+<p id="status" role="status"></p><footer>Safari 收藏夹使用 App 中的 HTML 文件交换。本扩展不读取浏览器内置密码库。</footer>
+</main><script type="module" src="options.mjs"></script></body></html>

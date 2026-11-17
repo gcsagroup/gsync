@@ -1,0 +1,9 @@
+const api=globalThis.browser??chrome,$=id=>document.getElementById(id);let firstConfirmed=false;
+async function run(action,extra={}){$('status').textContent='正在处理…';const result=await api.runtime.sendMessage({action,...extra});if(!result.ok)throw new Error(result.error);$('status').textContent='';return result.payload;}
+function bind(id,handler){$(id).addEventListener('click',async()=>{try{await handler();}catch(error){$('status').textContent=error.message??'操作失败';}});}
+bind('preview',async()=>{const result=await run('previewBookmarks');$('summary').textContent=`本浏览器 ${result.localCount} 条收藏，App ${result.remoteCount} 条收藏。将按对象合并，保留目录与历史。`;firstConfirmed=true;$('sync').disabled=false;});
+bind('sync',async()=>{const result=await run('syncBookmarks',{firstConfirmed});$('status').textContent=result.message??'已有同步正在执行';});
+bind('list',async()=>{const result=await run('credentials');$('origin').textContent=result.origin;$('credentials').replaceChildren();for(const item of result.items){const row=document.createElement('div');row.className='credential';const title=document.createElement('span');title.textContent=`${item.title} · ${item.username}`;const button=document.createElement('button');button.textContent='填充';button.onclick=async()=>{try{const result=await run('fill',{itemID:item.id});$('status').textContent=result?.error??'字段已填写，请自行提交登录';}catch(error){$('status').textContent=error.message;}};row.append(title,button);$('credentials').append(row);}if(!result.items.length)$('status').textContent='没有精确匹配此网站的账号';});
+bind('capture',async()=>{const result=await run('capture');if(result?.error)throw new Error(result.error);$('status').textContent='已暂存当前表单，点击确认保存，并在 App 核对网站与账号。';});
+bind('save',async()=>{await run('save');$('status').textContent='已保存到本机保险库';});
+bind('options',()=>api.runtime.openOptionsPage());
