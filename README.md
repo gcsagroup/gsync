@@ -2,7 +2,7 @@
 
 个人收藏夹与保险库的跨平台开发项目，包含 macOS、iOS、Android 和 Windows 客户端，以及数据核心、浏览器扩展和本地验证服务。产品范围与原始验收标准见 [文档导航](docs/README.md)。
 
-**当前开发版本为 Ver 5.1。** 本轮验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (150)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
+**当前开发版本为 Ver 5.1。** 本轮验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (152)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
 
 收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已核对取消验证和主密码回退，实际指纹成功解锁待验。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。完整结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
 

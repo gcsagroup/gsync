@@ -58,12 +58,16 @@ enum BiometricUnlock {
         entry[kSecAttrAccessControl] = control
         entry[kSecValueData] = key
         entry[kSecUseAuthenticationContext] = context
-        let status = SecItemAdd(entry as CFDictionary, nil)
+        var status = SecItemAdd(entry as CFDictionary, nil)
         if status == errSecDuplicateItem {
             try remove(file)
-            guard SecItemAdd(entry as CFDictionary, nil) == errSecSuccess else { throw PBError.unavailable }
-        } else if status != errSecSuccess {
-            throw PBError.unavailable
+            status = SecItemAdd(entry as CFDictionary, nil)
+        }
+        if status == errSecMissingEntitlement {
+            throw PBError.invalid("系统钥匙串尚未授权此应用签名，请使用具备钥匙串权限的开发签名版本。")
+        }
+        guard status == errSecSuccess else {
+            throw PBError.invalid("无法保存本机生物识别密钥（钥匙串状态 \(status)）。")
         }
     }
 

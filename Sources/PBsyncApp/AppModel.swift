@@ -239,7 +239,8 @@ struct ExportDocument: FileDocument {
                 } catch let error as LAError where [.userCancel, .systemCancel, .appCancel].contains(error.code) {
                     return true
                 } catch {
-                    report(PBError.invalid("已用主密码解锁，本机未能启用生物识别解锁。"))
+                    if error is PBError { report(error) }
+                    else { report(PBError.invalid("已用主密码解锁，本机未能启用生物识别解锁。")) }
                 }
             }
             return true
