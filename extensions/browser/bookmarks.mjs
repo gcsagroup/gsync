@@ -52,6 +52,11 @@ export class BookmarkSync {
       }
       change.deleted = confirmed;
     }
+    // 连同旧字段发送，App 只提交真正改变的字段，保留另一端更新的标题或备注。
+    change.baselines = Object.fromEntries(change.items.flatMap(item => {
+      const value = baseline[item.id.toLowerCase()];
+      return typeof value === 'string' ? [[item.id.toLowerCase(), JSON.parse(value)]] : [];
+    }));
     return change;
   }
   // 首次接入时，已通过文件交换对齐的书签可以共用身份。相同条目按出现次数逐个匹配。
@@ -173,10 +178,13 @@ export class BookmarkSync {
       }
       await this.api.storage.local.set({bookmarkMapping:mapping});
       const after=await this.snapshot();
-      await this.api.storage.local.set({bookmarkBaseline:expected,bookmarkConnected:true,lastSync:new Date().toISOString()});
+      await this.api.storage.local.set({bookmarkBaseline:expected,bookmarkConnected:true,lastSync:new Date().toISOString(),bookmarkLastError:''});
       const acknowledged = [...change.deleted,...arrived.deleted,...remote.deleted].map(id => 'bookmarkRemoval:'+id);
       if (acknowledged.length) await this.api.storage.local.remove(acknowledged);
       return {count:after.nodes.length,message:'已与本机 App 合并；跨设备状态请在 App 查看'};
+    } catch(error) {
+      await this.api.storage.local.set({bookmarkLastError:String(error?.message??'同步未完成').slice(0,2000)}).catch(()=>{});
+      throw error;
     } finally {this.running=false;}
   }
 }

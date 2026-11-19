@@ -18,6 +18,37 @@ function mock(){
     async remove(id){if(children(id).length)throw Error('nonempty');nodes.delete(id);}
   }};return {api,saved,nodes};
 }
+test('排序修改携带原字段基线，区分改名与其他端的更新',async()=>{
+  const {api,nodes,saved}=mock(),remote=new Map(),requests=[];
+  nodes.set('4',{id:'4',parentId:'1',title:'相邻收藏',url:'https://example.invalid/neighbor',index:1});
+  const native=async request=>{
+    requests.push(structuredClone(request));
+    for(const item of request.items??[])remote.set(item.id,structuredClone(item));
+    return {items:structuredClone([...remote.values()]),deleted:[]};
+  };
+  const sync=new BookmarkSync(api,native);
+  await sync.sync({firstConfirmed:true});
+  const uuid=saved.bookmarkMapping['3'],previous=JSON.parse(saved.bookmarkBaseline[uuid]);
+  nodes.get('3').index=1;nodes.get('4').index=0;
+  await sync.sync();
+  const change=requests.findLast(r=>r.items?.some(item=>item.id===uuid&&item.order===1));
+  assert.ok(change);
+  assert.deepEqual(change.baselines[uuid],previous);
+  assert.equal(change.items.find(item=>item.id===uuid).title,previous.title);
+});
+test('同步失败保留可见原因，成功后清除旧错误',async()=>{
+  const {api,saved}=mock(),remote=new Map();let unavailable=false;
+  const native=async({items=[]})=>{
+    if(unavailable)throw new Error('App 已锁定');
+    for(const item of items)remote.set(item.id,structuredClone(item));
+    return {items:structuredClone([...remote.values()]),deleted:[]};
+  };
+  const sync=new BookmarkSync(api,native);
+  await sync.sync({firstConfirmed:true});
+  unavailable=true;await assert.rejects(sync.sync(),/App 已锁定/);
+  assert.equal(saved.bookmarkLastError,'App 已锁定');
+  unavailable=false;await sync.sync();assert.equal(saved.bookmarkLastError,'');
+});
 test('首次未确认不修改浏览器，确认后合并且保留原收藏',async()=>{const {api,saved,nodes}=mock();const remote=new Map();const native=async request=>{if(request.command==='bookmarks.apply'){for(const item of request.items)remote.set(item.id,item);for(const id of request.deleted)remote.delete(id);}return {items:[...remote.values()],deleted:[]};};const sync=new BookmarkSync(api,native);await assert.rejects(sync.sync(),/首次合并/);assert.equal(nodes.size,4);await sync.sync({firstConfirmed:true});assert.ok(saved.bookmarkRecoverySnapshot);assert.ok(saved.bookmarkConnected);assert.equal([...nodes.values()].filter(n=>n.url).length,1);await sync.sync();assert.equal([...nodes.values()].filter(n=>n.url).length,1);});
 
 import {committedCandidate,canAutoSave} from '../extensions/browser/save-policy.mjs';

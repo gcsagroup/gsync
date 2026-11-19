@@ -2,7 +2,7 @@
 
 个人收藏夹与保险库的跨平台开发项目，包含 macOS、iOS、Android 和 Windows 客户端，以及数据核心、浏览器扩展和本地验证服务。产品范围与原始验收标准见 [文档导航](docs/README.md)。
 
-**当前开发版本为 Ver 5.1。** 最近实操验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (160)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
+**当前开发版本为 Ver 5.1。** 最近实操验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (166)。iOS 本轮兼容编译构建为 (168)，没有算作新的界面验收。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
 
 收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已使用不依赖开发者账号的 Secure Enclave 方案，通过收藏夹和密码库的真实指纹启用、锁定后解锁，以及 App 重启后仅用指纹解锁与内容回读，见 [Mac 指纹续验记录](reports/2026-11-19-mac-secure-enclave.md)。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。各平台结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
 
@@ -49,9 +49,11 @@ python3 scripts/validate.py
 
 ## Mac 书签接入
 
-仅书签扩展 2.1.3 自动协调写回。对于经实测的浏览器版本、单一且可核对的配置、已有纯网址目录，原生通道可在现有网址前插入或修改标题。删除直接由浏览器书签接口执行，整目录先删子项再删父项；移动、末尾追加、空目录、文件夹操作、混排和无法确认的配置也自动使用扩展。原生写入回执不确定时先核对实际书签；原生新增结果未能唯一识别时暂缓这一轮，避免重复创建。[Edge 和 Aegis 的逐项测试及 iPhone 方案](docs/02-compatibility-and-feasibility.md#edge-和-aegis-自动选路)
+仅书签扩展 2.1.5 自动协调写回，并携带上次确认的字段，避免排序变更覆盖另一端的新标题或 App 内备注；旧扩展的变更请求会提示升级。对于经实测的浏览器版本、单一且可核对的配置、已有纯网址目录，原生通道可在现有网址前插入或修改标题。删除直接由浏览器书签接口执行，整目录先删子项再删父项；移动、末尾追加、空目录、文件夹操作、混排和无法确认的配置也自动使用扩展。原生写入回执不确定时先核对实际书签；原生新增结果未能唯一识别时暂缓这一轮，避免重复创建。[Edge 和 Aegis 的逐项测试及 iPhone 方案](docs/02-compatibility-and-feasibility.md#edge-和-aegis-自动选路)
 
 在「同步与连接」中仅选择收藏夹，启用「Mac 解锁期间允许此收藏夹后台同步」后生成配对密钥。每个配置首次确认合并后，扩展自动传播本地变动并定期拉取。Mac 会话锁定、睡眠、手动锁库或退出 PBsync 后暂停。
+
+本次已恢复日常资料及 Chrome、Firefox 的原配对，实测自动新增、标题修改和删除；结束时原有 332 条书签、目录及顺序与备份一致。Firefox 当前使用临时加载，退出浏览器后需要重新加载。独立 `--profile` 启动会明确标注资料隔离；“仅保存在本机”表示尚未设置设备间同步位置，与本机浏览器同步分别显示。过程与能力缺口见 [日常来源恢复记录](reports/2026-11-19-real-source-sync.md)。
 
 在「同步与连接」为已解锁的收藏夹开启「Safari 文件后台交换」，可从固定输入目录合并书签并写出 Safari ZIP。普通配置使用 `~/PBsync-书签交换/<收藏夹标识>/`，独立 `--profile` 使用该资料下的 `书签交换/`。来源依次查找 `待导入/Safari-收藏夹.zip`、`Safari-收藏夹.html`、`Bookmarks.html`，输出放入 `已导出/`。后台失败显示状态，手动检查文件可选择并记住替代路径。旧文件不会重复导入，文件缺项不触发删除，内容相同的输出不会重复写入。覆盖旧输出前保留历史副本。App 运行且收藏夹解锁时处理，锁屏、手动锁定或退出时暂停。**Safari 导入仍由 Safari 端完成。**
 

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "2.1.4",
+  "version": "2.1.5",
   "name": "PBsync 书签",
   "description": "只配对本机收藏夹并保留合并前快照。",
   "permissions": [

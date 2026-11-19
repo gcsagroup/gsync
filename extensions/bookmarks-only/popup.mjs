@@ -1,5 +1,10 @@
 const api=globalThis.browser??chrome;
 const element=id=>document.getElementById(id);
+api.storage.local.get(['bookmarkConnected','lastSync','bookmarkLastError']).then(saved=>{
+  element('status').textContent=saved.bookmarkLastError ? '同步未完成：'+saved.bookmarkLastError :
+    saved.bookmarkConnected ? '自动同步已启用'+(saved.lastSync?' · 最近成功 '+new Date(saved.lastSync).toLocaleString():'') :
+    '尚未连接，请先预览并确认合并。';
+}).catch(()=>{element('status').textContent='无法读取连接状态，请检查扩展权限。';});
 async function call(action) {
   const result=await api.runtime.sendMessage({action});
   if(result.error) throw new Error(result.error);

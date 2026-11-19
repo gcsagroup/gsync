@@ -107,14 +107,20 @@ public actor VaultStore {
             return true
         }
     }
-    public func importItems(_ items: [Item]) throws -> Int {
+    public func importItems(_ items: [Item], bookmarkBaselines: [String: BrowserBookmarkBaseline] = [:]) throws -> Int {
         try transaction { state in
+            guard bookmarkBaselines.isEmpty || state.kind == .bookmarks else { throw PBError.unsupported }
             var changed = 0
             var clock = state.revisions.map(\.time).max() ?? LogicalTime(milliseconds: 0)
             var revisions: [Revision] = []
             let current = state.current
             guard Set(items.map(\.id)).count == items.count else { throw PBError.invalid("导入文件包含重复的对象身份。") }
-            for item in items {
+            for proposed in items {
+                var item = proposed
+                if let baseline = bookmarkBaselines[item.id.uuidString.lowercased()],
+                   let old = current[item.id], !old.deleted {
+                    item = baseline.applying(proposed, to: old.item)
+                }
                 try item.validate(in: state.kind)
                 if let old = current[item.id], old.item == item, !old.deleted { continue }
                 clock = clock.next()

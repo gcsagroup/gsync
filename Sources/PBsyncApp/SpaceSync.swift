@@ -47,10 +47,26 @@ import PBsyncCore
         do {
             // 后台任务读取目标空间已保存的配置，界面可能正在编辑另一个空间。
             let account = settingsAccount(id)
-            let data = try await Task.detached { try Keychain.read(account: account, allowInteraction: manual) }.value
+            let data: Data?
+            do {
+                data = try await Task.detached { try Keychain.read(account: account, allowInteraction: manual) }.value
+            } catch {
+                guard spaceSession(id) == session, states[id] != nil else { return }
+                if (error as? PBError) == .unavailable {
+                    // 本机钥匙串正被其他任务使用，不应显示为远端连接失败。
+                    retry = 1_000_000_000
+                    status[id] = "正在等待读取本机同步设置"
+                } else {
+                    status[id] = "无法读取同步位置，请打开连接来源检查钥匙串授权"
+                }
+                if manual { report(error) }
+                return
+            }
             guard spaceSession(id) == session, states[id] != nil else { return }
             let config = try data.map { try Coding.decode(StorageConfiguration.self, from: $0) } ?? StorageConfiguration()
             guard config.kind != .local else {
+                retryDelay[id] = nil
+                status[id] = "仅保存在本机 · 尚未设置设备间同步位置"
                 if manual { report(PBError.invalid("请先选择主要同步位置。")) }
                 return
             }
@@ -68,7 +84,7 @@ import PBsyncCore
                 let seconds = min(60, (retryDelay[id] ?? 1) * 2)
                 retryDelay[id] = seconds
                 retry = seconds * 1_000_000_000
-                status[id] = "修改已保存，\(seconds) 秒后重试同步"
+                status[id] = "本机数据已保留 · 访问同步位置失败，\(seconds) 秒后重试"
             } else {
                 status[id] = (error as? PBError)?.localizedDescription ?? "请检查同步位置和权限"
             }

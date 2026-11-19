@@ -125,7 +125,19 @@ extension AppModel {
                 guard let values = request["items"] as? [[String: Any]], values.count <= 50_000,
                       let deleted = request["deleted"] as? [String], deleted.count <= 50_000 else { throw PBError.invalid("收藏夹同步请求格式无效。") }
                 let items = try Coding.decode([Item].self, from: JSONSerialization.data(withJSONObject: values))
-                var changed = items.isEmpty ? 0 : try await store.importItems(items)
+                let rawBaselines = request["baselines"] as? [String: Any]
+                guard items.isEmpty && deleted.isEmpty || rawBaselines != nil else {
+                    throw PBError.invalid("请更新浏览器扩展后同步，旧版扩展无法安全合并并发修改。")
+                }
+                let decoded = try Coding.decode([String: BrowserBookmarkBaseline].self,
+                    from: JSONSerialization.data(withJSONObject: rawBaselines ?? [:]))
+                guard decoded.count <= 50_000 else { throw PBError.quota }
+                var baselines: [String: BrowserBookmarkBaseline] = [:]
+                for (key, value) in decoded {
+                    guard let uuid = UUID(uuidString: key),
+                          baselines.updateValue(value, forKey: uuid.uuidString.lowercased()) == nil else { throw PBError.damaged }
+                }
+                var changed = items.isEmpty ? 0 : try await store.importItems(items, bookmarkBaselines: baselines)
                 for text in deleted {
                     guard let itemID = UUID(uuidString: text) else { throw PBError.invalid("删除记录无效。") }
                     if let old = (try await store.snapshot()).current[itemID], !old.deleted { changed += try await store.delete(itemID) }
@@ -138,7 +150,7 @@ extension AppModel {
             } else if command != "bookmarks.pull" { throw PBError.unsupported }
             let current = try await store.snapshot()
             guard authorization == bridgeAuthorizationEpoch, session == spaceSession(id), states[id] != nil else { throw PBError.locked }
-            if command == "bookmarks.apply" { lastBookmarkBridgeExchange[id] = .now }
+            lastBookmarkBridgeExchange[id] = .now
             let items = try JSONSerialization.jsonObject(with: Coding.encode(current.items))
             let deleted = current.current.values.filter(\.deleted).map { $0.item.id.uuidString.lowercased() }
             return ["items": items, "deleted": deleted, "name": current.name]

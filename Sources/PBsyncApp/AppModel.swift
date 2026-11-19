@@ -30,6 +30,7 @@ struct ExportDocument: FileDocument {
     @Published var importTarget: UUID?
     @Published var settings = StorageConfiguration()
     @Published var root: URL
+    let usesSeparateProfile: Bool
     @Published var search = ""
     @Published var showDeleted = false
     @Published var selectedFolder: UUID?
@@ -113,6 +114,7 @@ struct ExportDocument: FileDocument {
         }
     }
     init(root profile: URL? = nil, startBrowserBridge: Bool = true) {
+        usesSeparateProfile = profile != nil || ProcessInfo.processInfo.arguments.contains("--profile")
         root = FileManager.default.temporaryDirectory.appendingPathComponent("PBsync-unavailable")
         do {
             root = try profile ?? AppPaths.root(); deviceID = try AppPaths.deviceID(at: root)

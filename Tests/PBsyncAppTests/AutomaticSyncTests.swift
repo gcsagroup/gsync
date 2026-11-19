@@ -3,6 +3,74 @@ import PBsyncCore
 @testable import PBsyncApp
 
 @MainActor final class AutomaticSyncTests: XCTestCase {
+    func testBrowserOrderChangePreservesNewerTitle() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(root: root, startBrowserBridge: false)
+        await model.create(name: "并发书签", kind: .bookmarks, password: "Synthetic-Conflict-Password")
+        let id = try XCTUnwrap(model.selectedID), key = try Crypto.random(32)
+        model.bridgeToken = key.base64EncodedString(); model.bridgeActiveBookmarkID = id
+        let original = Item(kind: .bookmark, title: "原始标题", urls: ["https://sync.example.invalid/"])
+        await model.save(original)
+        var newer = original; newer.title = "另一端的新标题"; newer.notes = "保留本机备注"
+        await model.save(newer)
+        var reordered = original; reordered.order = 1
+        let items = try JSONSerialization.jsonObject(with: Coding.encode([reordered]))
+        let baseline: [String: Any] = ["kind": "bookmark", "title": original.title,
+            "parentID": NSNull(), "order": original.order, "urls": original.urls]
+        let request: [String: Any] = ["command": "bookmarks.apply", "items": items,
+            "deleted": [String](), "baselines": [original.id.uuidString.lowercased(): baseline]]
+        let wire = try BridgeWire.make(payload: JSONSerialization.data(withJSONObject: request), token: key)
+        _ = await model.handleBridge(try Coding.encode(wire))
+        let item = try XCTUnwrap(model.current?.items.first { $0.id == original.id })
+        XCTAssertEqual(item.title, newer.title, "浏览器只改排序时，旧标题不能覆盖另一端的新标题")
+        XCTAssertEqual(item.order, 1)
+        XCTAssertEqual(item.notes, newer.notes)
+        let legacy: [String: Any] = ["command": "bookmarks.apply", "items": items, "deleted": [String]()]
+        let oldWire = try BridgeWire.make(payload: JSONSerialization.data(withJSONObject: legacy), token: key)
+        let oldReply = await model.handleBridge(try Coding.encode(oldWire))
+        let oldPayload = try Coding.decode(BridgeWire.self, from: oldReply).open(token: key, response: true)
+        let oldResponse = try XCTUnwrap(JSONSerialization.jsonObject(with: oldPayload) as? [String: Any])
+        XCTAssertEqual(oldResponse["ok"] as? Bool, false, "旧扩展写入必须先升级，不能继续覆盖完整条目")
+        XCTAssertEqual(model.current?.items.first { $0.id == original.id }?.title, newer.title)
+        await model.lockAll()
+    }
+
+    func testBookmarkPreviewRecordsConnectionWithoutChangingItems() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(root: root, startBrowserBridge: false)
+        await model.create(name: "来源连接", kind: .bookmarks, password: "Synthetic-Bridge-Password")
+        let id = try XCTUnwrap(model.selectedID)
+        let key = try Crypto.random(32)
+        model.bridgeToken = key.base64EncodedString(); model.bridgeActiveBookmarkID = id
+        let before = model.current?.revisions.count
+        let request = try BridgeWire.make(payload: JSONSerialization.data(withJSONObject: ["command": "bookmarks.pull"]), token: key)
+        let reply = try await model.handleBridge(Coding.encode(request))
+        let payload = try Coding.decode(BridgeWire.self, from: reply).open(token: key, response: true)
+        let response = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
+        XCTAssertEqual(response["ok"] as? Bool, true)
+        XCTAssertNotNil(model.lastBookmarkBridgeExchange[id])
+        XCTAssertEqual(model.current?.revisions.count, before)
+        await model.lockAll()
+    }
+
+    func testLocalOnlyClearsPreviousRemoteRetryStatus() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(root: root, startBrowserBridge: false)
+        await model.create(name: "本机空间", kind: .bookmarks, password: "Synthetic-Local-Password")
+        let id = try XCTUnwrap(model.selectedID)
+        model.cancelScheduledSync(id)
+        model.status[id] = "修改已保存，2 秒后重试同步"
+        model.retryDelay[id] = 8
+        await model.runSync(id, manual: false)
+        XCTAssertEqual(model.status[id], "仅保存在本机 · 尚未设置设备间同步位置")
+        XCTAssertNil(model.retryDelay[id])
+        XCTAssertNotNil(model.current)
+        await model.lockAll()
+    }
+
     func testOfflineChangesSurviveRestartAndForegroundPull() async throws {
         let fm = FileManager.default, root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? fm.removeItem(at: root) }

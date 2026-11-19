@@ -26,6 +26,12 @@ struct MainView: View {
                     Image(systemName: "square.stack.3d.up.fill").font(.title).foregroundStyle(.tint)
                     Text("PBsync").font(.title2.bold())
                 }.padding(.top, 22).padding(.horizontal, 18)
+                if model.usesSeparateProfile {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label("独立资料模式", systemImage: "folder.badge.gearshape")
+                        Text("与日常资料分开，来源需单独连接。").font(.caption).foregroundStyle(.secondary)
+                    }.font(.callout).padding(.horizontal, 18)
+                }
                 List {
                     Section("工作空间") {
                         ForEach(sections, id: \.0) { name, icon in
@@ -56,7 +62,7 @@ struct MainView: View {
                     #if os(macOS)
                     if !model.automaticBookmarkFiles.intersection(model.states.keys).isEmpty ||
                         (model.backgroundBookmarkID.flatMap { model.states[$0] } != nil && !model.bridgeToken.isEmpty) {
-                        Label("书签后台同步已启用", systemImage: "arrow.triangle.2.circlepath")
+                        Label("后台连接检查已启用", systemImage: "arrow.triangle.2.circlepath")
                     } else {
                         Label("解密钥匙由你保管", systemImage: "key.horizontal")
                     }
