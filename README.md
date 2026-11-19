@@ -2,9 +2,9 @@
 
 个人收藏夹与保险库的跨平台开发项目，包含 macOS、iOS、Android 和 Windows 客户端，以及数据核心、浏览器扩展和本地验证服务。产品范围与原始验收标准见 [文档导航](docs/README.md)。
 
-**当前开发版本为 Ver 5.1。** 本轮验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (156)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
+**当前开发版本为 Ver 5.1。** 最近实操验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (160)。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
 
-收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已核对取消验证、主密码回退，以及 App 退出重启后的收藏夹和密码条目回读；Touch ID 保存密钥受开发签名与描述文件阻塞，成功解锁待验。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。完整结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
+收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已使用不依赖开发者账号的 Secure Enclave 方案，通过收藏夹和密码库的真实指纹启用、锁定后解锁，以及 App 重启后仅用指纹解锁与内容回读，见 [Mac 指纹续验记录](reports/2026-11-19-mac-secure-enclave.md)。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。各平台结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
 
 ## 本机运行
 
@@ -30,7 +30,7 @@ iPhone 模拟器包位于 `build/apple/Build/Products/Debug-iphonesimulator/PBsy
 ## 生物识别解锁
 
 - Android、iOS 和 Mac 可以在本机副本的主密码解锁界面开启生物识别。Android 使用系统支持的强生物识别，iOS 使用 Face ID 或 Touch ID，Mac 使用 Touch ID。收藏夹和密码库各自开启。
-- Mac 的 Touch ID 密钥保存在受保护钥匙串中，需要有效的应用签名与开发描述文件。默认临时签名构建会在请求指纹前提示缺少授权，主密码解锁仍可使用。已有合适开发团队时，可执行 `python3 scripts/build.py mac-signed --team TEAM_ID`，具体团队 ID 从 Xcode 读取。
+- Mac 使用 CryptoKit 的 Secure Enclave 硬件密钥保护本机解锁密钥，不要求开发者账号或描述文件。资料目录下的 `device-unlock/` 仅保存硬件封装数据与密文，目录权限为 0700，文件为 0600，并排除系统备份；记录绑定本机资料路径。新设备、硬件不可用或记录失效时可用主密码打开资料，随后重新启用 Touch ID。iOS 继续使用受保护钥匙串。
 - Windows 11 在解锁本机副本后提供 Windows Hello 入口。系统可以使用已配置的指纹、人脸或 Hello PIN。快速解锁只在本次程序运行中有效。
 - 初次连接、新设备和恢复加密备份仍需要主密码或恢复密钥。
 - Android 切到后台时锁定当前空间并关闭敏感编辑窗口。Apple 两端每次解锁独立发起系统验证，支持取消。Windows 在收到系统锁定、会话断开或睡眠通知时锁定空间。锁定前尚未完成的解锁结果会失效。

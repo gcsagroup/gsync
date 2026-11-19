@@ -18,6 +18,7 @@
 		2F7FB9A20A5DED1991216A95 /* ZIPFoundation-MIT.txt in Resources */ = {isa = PBXBuildFile; fileRef = 131E5AE4C7D2A1CFC9FC139B /* ZIPFoundation-MIT.txt */; };
 		30AD57A2012E2EDAF413C16E /* SpaceSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803A8645EEAFA4ECA1B4838B /* SpaceSync.swift */; };
 		35134080C1B8D28A981D457C /* ItemViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE63A338B52BDBCC1859CAB1 /* ItemViews.swift */; };
+		356019E38E1FF9B246055D60 /* MacBiometricUnlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B335349CDE979ACF1F72BA0 /* MacBiometricUnlock.swift */; };
 		39FA6E451778F60C658AC4FE /* ExternalSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26782E0DBFF2498416B1E71E /* ExternalSources.swift */; };
 		434DF40871BACEF9C8330F39 /* AccountDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80EE1D7C3E17463C06D31A52 /* AccountDevices.swift */; };
 		4A7B2ABE5179C8665267F50D /* AccountDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80EE1D7C3E17463C06D31A52 /* AccountDevices.swift */; };
@@ -43,6 +44,7 @@
 		AE082085B7548F21092EBF75 /* DesktopConnectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D4786BF5FEB8DD75ECE653 /* DesktopConnectionsView.swift */; };
 		C009443D1FBB5E3F2A823DBF /* DesktopLibraries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D623DA97480C093283316FC /* DesktopLibraries.swift */; };
 		D68140642B737435E15401CD /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE7CBFCFDB687380E4B2DAF /* MainView.swift */; };
+		D79EEAD7F0D12065D3CB6DA2 /* MacBiometricUnlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B335349CDE979ACF1F72BA0 /* MacBiometricUnlock.swift */; };
 		D7D5529228D435F43D3E05C0 /* BookmarkFileExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2A8FB996917ECA579AA49C /* BookmarkFileExchange.swift */; };
 		DDFDA0F92B6A036A92920723 /* SystemExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8CB46FFE2D1A4B43AF7F88 /* SystemExchange.swift */; };
 		E1704D93A101E12A902ED44E /* pbsync-connector in Resources */ = {isa = PBXBuildFile; fileRef = 87ACCCF69575332F7E722B72 /* pbsync-connector */; };
@@ -102,6 +104,7 @@
 		131E5AE4C7D2A1CFC9FC139B /* ZIPFoundation-MIT.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ZIPFoundation-MIT.txt"; sourceTree = "<group>"; };
 		26782E0DBFF2498416B1E71E /* ExternalSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalSources.swift; sourceTree = "<group>"; };
 		387F07FD1E08A91B12E419C8 /* PBsyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PBsyncApp.swift; sourceTree = "<group>"; };
+		4B335349CDE979ACF1F72BA0 /* MacBiometricUnlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBiometricUnlock.swift; sourceTree = "<group>"; };
 		4BE7CBFCFDB687380E4B2DAF /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		57969B312D864321735013E7 /* PBsyncMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PBsyncMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		67E85D52ADD41EB946D7098E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -212,6 +215,7 @@
 				9D623DA97480C093283316FC /* DesktopLibraries.swift */,
 				26782E0DBFF2498416B1E71E /* ExternalSources.swift */,
 				EE63A338B52BDBCC1859CAB1 /* ItemViews.swift */,
+				4B335349CDE979ACF1F72BA0 /* MacBiometricUnlock.swift */,
 				4BE7CBFCFDB687380E4B2DAF /* MainView.swift */,
 				387F07FD1E08A91B12E419C8 /* PBsyncApp.swift */,
 				08526BB4F665F5CF8E5BAD94 /* SettingsViews.swift */,
@@ -421,6 +425,7 @@
 				C009443D1FBB5E3F2A823DBF /* DesktopLibraries.swift in Sources */,
 				39FA6E451778F60C658AC4FE /* ExternalSources.swift in Sources */,
 				810813056B738A3132AE96AB /* ItemViews.swift in Sources */,
+				D79EEAD7F0D12065D3CB6DA2 /* MacBiometricUnlock.swift in Sources */,
 				D68140642B737435E15401CD /* MainView.swift in Sources */,
 				ABFD36D9968572DC6F828937 /* PBsyncApp.swift in Sources */,
 				A7B4DB671DB44C42942A4DA8 /* SettingsViews.swift in Sources */,
@@ -450,6 +455,7 @@
 				66018EE9386737BD80B73585 /* DesktopLibraries.swift in Sources */,
 				18443FFA052138BF650EA3D7 /* ExternalSources.swift in Sources */,
 				35134080C1B8D28A981D457C /* ItemViews.swift in Sources */,
+				356019E38E1FF9B246055D60 /* MacBiometricUnlock.swift in Sources */,
 				E4708D56DE91CF177D9ABDB8 /* MainView.swift in Sources */,
 				20E68529D7DEDF4C4303CE75 /* PBsyncApp.swift in Sources */,
 				72625D1FD89075A864E4CF19 /* SettingsViews.swift in Sources */,

@@ -228,7 +228,7 @@ struct ExportDocument: FileDocument {
             try await store.unlock(password: password)
             if enableBiometric, generation == lockGeneration[id, default: 0], selectedID == id {
                 do {
-                    try BiometricUnlock.checkStorageAuthorization()
+                    try BiometricUnlock.checkAvailability()
                     let context = beginBiometricUnlock(id)
                     defer { finishBiometricUnlock(context) }
                     try await BiometricUnlock.authenticate(context: context, reason: "为当前空间启用生物识别解锁")

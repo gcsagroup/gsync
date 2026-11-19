@@ -4,21 +4,9 @@ import PBsyncCore
 import Security
 
 enum BiometricUnlock {
-    static func checkStorageAuthorization() throws {
+    static func checkAvailability() throws {
         #if os(macOS)
-        var code: SecCode?
-        var staticCode: SecStaticCode?
-        var information: CFDictionary?
-        guard SecCodeCopySelf([], &code) == errSecSuccess, let code,
-              SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode,
-              SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation),
-                                           &information) == errSecSuccess,
-              let details = information as? [String: Any],
-              let rights = details[kSecCodeInfoEntitlementsDict as String] as? [String: Any],
-              let identifier = rights["com.apple.application-identifier"] as? String,
-              !identifier.isEmpty else {
-            throw PBError.invalid("当前 Mac 构建缺少受保护钥匙串的签名授权。请使用具备项目开发描述文件的签名版本启用 Touch ID。")
-        }
+        try MacBiometricUnlock.checkAvailability()
         #endif
     }
 
@@ -42,6 +30,9 @@ enum BiometricUnlock {
     }
 
     static func configured(_ file: URL) -> Bool {
+        #if os(macOS)
+        return MacBiometricUnlock.configured(file)
+        #else
         var attributes = query(file)
         let context = LAContext()
         context.interactionNotAllowed = true
@@ -50,6 +41,7 @@ enum BiometricUnlock {
         var result: CFTypeRef?
         let status = SecItemCopyMatching(attributes as CFDictionary, &result)
         return status == errSecSuccess || status == errSecInteractionNotAllowed
+        #endif
     }
 
     static func authenticate(context: LAContext, reason: String) async throws {
@@ -63,10 +55,9 @@ enum BiometricUnlock {
 
     static func save(_ key: Data, file: URL, context: LAContext) throws {
         #if os(macOS)
-        let accessibility = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        try MacBiometricUnlock.save(key, file: file, authentication: context)
         #else
         let accessibility = kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
-        #endif
         guard let control = SecAccessControlCreateWithFlags(nil, accessibility,
                                                            .biometryCurrentSet, nil) else {
             throw PBError.unavailable
@@ -87,11 +78,15 @@ enum BiometricUnlock {
         guard status == errSecSuccess else {
             throw PBError.invalid("无法保存本机生物识别密钥（钥匙串状态 \(status)）。")
         }
+        #endif
     }
 
     static func read(_ file: URL, context: LAContext) throws -> Data? {
         context.localizedFallbackTitle = ""
         context.localizedReason = "解锁 PBsync 当前空间"
+        #if os(macOS)
+        return try MacBiometricUnlock.read(file, authentication: context)
+        #else
         var entry = query(file)
         entry[kSecUseAuthenticationContext] = context
         entry[kSecReturnData] = true
@@ -102,10 +97,15 @@ enum BiometricUnlock {
             throw PBError.invalid("本机生物识别解锁不可用。请使用主密码或恢复密钥。")
         }
         return key
+        #endif
     }
 
     static func remove(_ file: URL) throws {
+        #if os(macOS)
+        try MacBiometricUnlock.remove(file)
+        #else
         let status = SecItemDelete(query(file) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else { throw PBError.unavailable }
+        #endif
     }
 }
