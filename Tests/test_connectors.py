@@ -12,6 +12,16 @@ class ConnectorTests(unittest.TestCase):
         self.tmp.cleanup()
         if self.old is None:os.environ.pop('PBSYNC_SOURCE_PASSWORD',None)
         else:os.environ['PBSYNC_SOURCE_PASSWORD']=self.old
+    def test_kdbx_recycle_bin_and_nested_entries_are_not_imported(self):
+        from pykeepass import create_database
+        path=self.root/'recycle.kdbx';db=create_database(path,password='SYNTHETIC-ONLY-2026')
+        live=db.add_entry(db.root_group,'保留账号','live','live-secret')
+        trashed=db.add_entry(db.root_group,'回收站账号','trashed','trashed-secret')
+        db.trash_entry(trashed)
+        nested=db.add_group(db.recyclebin_group,'回收站子目录')
+        db.add_entry(nested,'子目录旧账号','nested','nested-secret');db.save()
+        result=c.read_kdbx(path)
+        self.assertEqual([item['sourceID'] for item in result['items']],[str(live.uuid)])
     def test_1pux_selection_preserves_unknown(self):
         result=c.onepux(ROOT/'fixtures/synthetic.1pux','vault-test-001')
         self.assertEqual(len(result['items']),1)

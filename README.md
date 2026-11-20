@@ -2,7 +2,7 @@
 
 个人收藏夹与保险库的跨平台开发项目，包含 macOS、iOS、Android 和 Windows 客户端，以及数据核心、浏览器扩展和本地验证服务。产品范围与原始验收标准见 [文档导航](docs/README.md)。
 
-**当前开发版本为 Ver 5.1。** 最近实操验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (166)。iOS 本轮兼容编译构建为 (168)，没有算作新的界面验收。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
+**当前开发版本为 Ver 5.1。** 最近实操验收构建为 Android (143)、iOS 模拟器 (149)、Windows (147) 和 Mac (173)。iOS 最近兼容编译构建为 (168)，没有算作新的界面验收。Apple 客户端使用 Swift／SwiftUI，Android 使用 Java 和原生界面，Windows 使用 C++／Win32，编译器运行库静态链接。Android 和 Windows 的构建入口见 [Android 构建说明](apps/Portable/README.md)及 [Windows 构建说明](apps/Windows/README.md)。
 
 收藏夹支持目录浏览、移动与排序，密码库提供搜索及条目管理。Android 指纹和 iOS Face ID 已通过模拟器的拒绝、取消、后台锁定及重启后解锁检查。Mac 已使用不依赖开发者账号的 Secure Enclave 方案，通过收藏夹和密码库的真实指纹启用、锁定后解锁，以及 App 重启后仅用指纹解锁与内容回读，见 [Mac 指纹续验记录](reports/2026-11-19-mac-secure-enclave.md)。Windows 11 已核对远程会话中的主密码回退、锁定通知和取消编辑，Hello 成功解锁待交互桌面验收。各平台结果见 [四端生物识别验收记录](reports/2026-11-18-biometric-unlock.md)。此前的 iPhone 流程见 [模拟器验收记录](reports/2026-11-17-iphone-simulator.md)，浏览器实测见 [修复验收记录](reports/2026-11-10-sync-repair.md)。
 
@@ -59,6 +59,8 @@ python3 scripts/validate.py
 
 ## 扩展
 
+当前打包版本为 2.1.6。两种 Firefox 包均通过 Mozilla 官方检查，最低版本为 142；ZIP 包内含 MIT 许可及独立的版本、权限和 SHA-256 回执。Firefox 常驻安装仍需 AMO 签名，当前包未签名，不能替代临时加载。具体步骤见 [Firefox 签名准备](distribution/FIREFOX.md)。
+
 `build/extensions/chromium` 用于 Chrome／Edge／Aegis 的开发者加载；Firefox 包位于 `build/extensions/firefox`。仅书签版位于 `build/extensions/chromium-bookmarks` 与 `build/extensions/firefox-bookmarks`。每种浏览器都需要单独验收。
 
 ```sh
@@ -74,6 +76,8 @@ python3 scripts/install-native-host.py --browser chrome --extension-id 扩展ID 
 KDBX 仅生成候选、独立重新加载并核对未知字段与附件，始终不替换原文件；`--apply` 会明确拒绝。候选附带来源 SHA-256 和生成期间来源是否变化的状态，需在来源客户端核对与合并；这不是持续双向写回完成。1Password CLI 在缺少经验证的原子版本条件时拒绝自动覆盖，不把“预览候选”描述成双向同步完成。
 
 本机临时签名构建升级后，旧来源的登录钥匙串访问可能需要重新授权。连接页仍可浏览，授权入口位于「连接来源」中的「恢复来源钥匙串授权」。
+
+合成 KDBX 已通过 App 自动新增、更新、来源失联恢复、候选回读，以及锁定和同一构建重启后的读取恢复检查。暂时缺少来源文件不再永久关闭连接；文件恢复后自动重试，授权失败仍暂停等待处理。KDBX 回收站及其子目录不作为活动条目导入；来源缺少条目仍只报告缺失，不自动删除 App 中的数据。结果和升级授权边界见 [来源续验记录](reports/2026-11-20-source-read-and-firefox.md)。
 
 ## 本地云与 WebDAV
 

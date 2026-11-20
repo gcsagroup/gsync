@@ -69,8 +69,7 @@ enum SourceTool {
             url = resolved
         } else {
             // KeePassXC 使用原子替换。只尝试已选的原路径，拒绝符号链接，仍需核对库 UUID。
-            guard let path = link.originalPath, path.hasPrefix("/"),
-                  FileManager.default.isReadableFile(atPath:path) else { throw PBError.unauthorized }
+            guard let path = link.originalPath, path.hasPrefix("/") else { throw PBError.unauthorized }
             let original = URL(fileURLWithPath:path).standardizedFileURL
             guard original.resolvingSymlinksInPath().path == original.path else { throw PBError.unauthorized }
             url = original
@@ -78,6 +77,11 @@ enum SourceTool {
         let key = try link.keyFile.map { try file($0) }
         let access = url.startAccessingSecurityScopedResource(), keyAccess = key?.startAccessingSecurityScopedResource() == true
         defer { if access { url.stopAccessingSecurityScopedResource() }; if keyAccess { key?.stopAccessingSecurityScopedResource() } }
+        // 网盘尚未挂载或来源正在原子替换时，等待下一次检查，不撤销已有连接。
+        for file in [url] + (key.map { [$0] } ?? []) {
+            guard FileManager.default.fileExists(atPath: file.path) else { throw PBError.unavailable }
+            guard FileManager.default.isReadableFile(atPath: file.path) else { throw PBError.unauthorized }
+        }
         var args = [baseline == nil ? "kdbx-read" : "kdbx-write","--input",url.path]
         if let key { args += ["--keyfile",key.path] }
         if let baseline { args += ["--expected",baseline] }
@@ -196,6 +200,11 @@ struct FileVaultList: Decodable { let vaults: [FileVaultChoice] }
             externalStatus[link.id] = message
         } catch {
             guard states[target] != nil, spaceSession(target) == session else { return }
+            if (error as? PBError) == .unavailable {
+                externalStatus[link.id] = link.enabled ? "来源暂不可用 · 本地密码已保留，恢复后自动重试" :
+                    "来源暂不可用 · 本地密码已保留，请恢复来源后重新读取"
+                return
+            }
             do {
                 var configs = try links(target, allowInteraction:allowInteraction)
                 if let i = configs.firstIndex(where:{$0.id == link.id}) {

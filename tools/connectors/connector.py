@@ -103,8 +103,10 @@ def read_kdbx(path,keyfile=None):
     from lxml import etree
     baseline=digest(path)
     database=keepass(path,keyfile);items=[]
+    recycle=database.recyclebin_group
     for entry in database.entries:
-        if entry.is_a_history_entry: continue
+        # 历史和回收站不应作为活动密码重新导入，包括回收站的子目录。
+        if entry.is_a_history_entry or (recycle is not None and recycle._element in entry._element.iterancestors()): continue
         fields={'username':entry.username or '', 'password':entry.password or ''}
         for name,value in entry.custom_properties.items(): fields['totp' if name=='otp' else 'custom.'+name]=value or ''
         item=base_item(entry.uuid,entry.title,'login',[entry.url] if entry.url else [],fields,entry.notes,{'entryXML':etree.tostring(entry._element,encoding='unicode'),'groupPath':entry.group.path})
